@@ -27,6 +27,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { AlertTriangle, Plus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 
 const budgetFormSchema = z.object({
   amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
@@ -243,10 +244,9 @@ export function BudgetPage() {
                     {budgetUsagePercentage}% • {budgetStatus.message}
                   </span>
                 </div>
-                <Progress
-                  value={budgetUsagePercentage}
-                  className="h-2"
-                  indicatorClassName={getProgressColor()}
+                <Progress 
+                  value={budgetUsagePercentage} 
+                  className={cn("h-2", getProgressColor())} 
                 />
               </div>
               
@@ -314,10 +314,9 @@ export function BudgetPage() {
                         )}
                       </div>
                     </div>
-                    <Progress
-                      value={percentage}
-                      className="h-2"
-                      indicatorClassName="bg-primary"
+                    <Progress 
+                      value={percentage} 
+                      className={cn("h-2", "bg-primary")} 
                     />
                   </div>
                 );
