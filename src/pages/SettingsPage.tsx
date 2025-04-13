@@ -53,7 +53,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Trash2, Moon, Sun } from 'lucide-react';
+import { Loader2, Plus, Trash2, Moon, Sun, Key, Mail } from 'lucide-react';
 
 // Profile form schema
 const profileFormSchema = z.object({
@@ -62,6 +62,13 @@ const profileFormSchema = z.object({
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
+
+// Password reset form schema
+const resetPasswordFormSchema = z.object({
+  email: z.string().email('Enter a valid email address'),
+});
+
+type ResetPasswordFormValues = z.infer<typeof resetPasswordFormSchema>;
 
 // Category form schema
 const categoryFormSchema = z.object({
@@ -73,7 +80,7 @@ const categoryFormSchema = z.object({
 type CategoryFormValues = z.infer<typeof categoryFormSchema>;
 
 export function SettingsPage() {
-  const { user, updateProfile, isLoading } = useAuth();
+  const { user, updateProfile, isLoading, resetPassword } = useAuth();
   const {
     expenseCategories,
     incomeCategories,
@@ -83,12 +90,21 @@ export function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
   
   const [isAddCategoryOpen, setIsAddCategoryOpen] = React.useState(false);
+  const [isResetPasswordSent, setIsResetPasswordSent] = React.useState(false);
   
   // Initialize profile form
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       name: user?.name || '',
+      email: user?.email || '',
+    },
+  });
+  
+  // Initialize password reset form
+  const resetPasswordForm = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordFormSchema),
+    defaultValues: {
       email: user?.email || '',
     },
   });
@@ -100,8 +116,12 @@ export function SettingsPage() {
         name: user.name,
         email: user.email,
       });
+      
+      resetPasswordForm.reset({
+        email: user.email,
+      });
     }
-  }, [user, profileForm]);
+  }, [user, profileForm, resetPasswordForm]);
   
   // Initialize category form
   const categoryForm = useForm<CategoryFormValues>({
@@ -121,6 +141,17 @@ export function SettingsPage() {
       });
     } catch (error) {
       console.error('Profile update error:', error);
+    }
+  };
+  
+  // Handle password reset form submission
+  const onResetPasswordSubmit = async (values: ResetPasswordFormValues) => {
+    try {
+      await resetPassword(values.email);
+      setIsResetPasswordSent(true);
+    } catch (error) {
+      console.error('Password reset error:', error);
+      setIsResetPasswordSent(false);
     }
   };
   
@@ -164,6 +195,7 @@ export function SettingsPage() {
       <Tabs defaultValue="profile">
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="appearance">Appearance</TabsTrigger>
         </TabsList>
@@ -231,6 +263,101 @@ export function SettingsPage() {
                   </Button>
                 </form>
               </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Security Tab */}
+        <TabsContent value="security" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Security</CardTitle>
+              <CardDescription>
+                Manage your account security settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Password Reset Section */}
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Password Reset</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Send a password reset link to your email address
+                  </p>
+                  
+                  {isResetPasswordSent ? (
+                    <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                      <p className="text-green-800 text-sm">
+                        Password reset email sent. Please check your inbox for instructions.
+                      </p>
+                      <Button 
+                        variant="link" 
+                        className="p-0 mt-2 h-auto text-green-700"
+                        onClick={() => setIsResetPasswordSent(false)}
+                      >
+                        Send again
+                      </Button>
+                    </div>
+                  ) : (
+                    <Form {...resetPasswordForm}>
+                      <form onSubmit={resetPasswordForm.handleSubmit(onResetPasswordSubmit)} className="space-y-4">
+                        <FormField
+                          control={resetPasswordForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <div className="flex gap-2">
+                                  <Input {...field} readOnly className="flex-1" />
+                                  <Button 
+                                    type="submit" 
+                                    disabled={isLoading}
+                                    className="flex items-center gap-1"
+                                  >
+                                    {isLoading ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <>
+                                        <Mail className="h-4 w-4" />
+                                        Send Reset Link
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </form>
+                    </Form>
+                  )}
+                </div>
+                
+                {/* Account Provider Information */}
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Login Method</h3>
+                  <div className="bg-muted p-3 rounded-md flex items-center gap-3">
+                    {user?.authProvider === 'google' ? (
+                      <>
+                        <Mail className="h-5 w-5 text-primary" />
+                        <span>You're signed in with Google</span>
+                      </>
+                    ) : user?.authProvider === 'guest' ? (
+                      <>
+                        <User className="h-5 w-5 text-primary" />
+                        <span>You're signed in as a guest</span>
+                      </>
+                    ) : (
+                      <>
+                        <Key className="h-5 w-5 text-primary" />
+                        <span>You're signed in with email and password</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
