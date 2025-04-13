@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -9,6 +8,7 @@ export type User = {
   name: string;
   avatarUrl?: string;
   createdAt: Date;
+  authProvider?: 'email' | 'google' | 'guest';
 };
 
 // Define the AuthContextType
@@ -17,6 +17,8 @@ type AuthContextType = {
   isAuthenticated: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signInAsGuest: () => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => void;
   resetPassword: (email: string) => Promise<void>;
@@ -32,6 +34,7 @@ const demoUser: User = {
   email: 'demo@example.com',
   name: 'Demo User',
   createdAt: new Date(),
+  authProvider: 'email'
 };
 
 // Create the AuthProvider component
@@ -53,7 +56,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Set the demo user for now
-      setUser(demoUser);
+      setUser({
+        ...demoUser,
+        email,
+        authProvider: 'email'
+      });
       toast({
         title: 'Signed in successfully',
         description: `Welcome back, ${demoUser.name}!`,
@@ -61,6 +68,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       toast({
         title: 'Sign in failed',
+        description: error instanceof Error ? error.message : 'Something went wrong',
+        variant: 'destructive',
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    setIsLoading(true);
+    try {
+      // This would typically connect to a Google OAuth provider
+      // For demo, we'll simulate the login
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const googleUser: User = {
+        id: '2',
+        email: 'google-user@gmail.com',
+        name: 'Google User',
+        avatarUrl: 'https://lh3.googleusercontent.com/a/default-user',
+        createdAt: new Date(),
+        authProvider: 'google'
+      };
+      
+      setUser(googleUser);
+      toast({
+        title: 'Signed in with Google',
+        description: `Welcome, ${googleUser.name}!`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Google sign in failed',
+        description: error instanceof Error ? error.message : 'Something went wrong',
+        variant: 'destructive',
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signInAsGuest = async () => {
+    setIsLoading(true);
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const guestUser: User = {
+        id: `guest-${Date.now()}`,
+        email: `guest-${Date.now()}@example.com`,
+        name: 'Guest User',
+        createdAt: new Date(),
+        authProvider: 'guest'
+      };
+      
+      setUser(guestUser);
+      toast({
+        title: 'Signed in as guest',
+        description: 'You can explore the app without creating an account',
+      });
+    } catch (error) {
+      toast({
+        title: 'Guest sign in failed',
         description: error instanceof Error ? error.message : 'Something went wrong',
         variant: 'destructive',
       });
@@ -175,6 +246,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         signIn,
+        signInWithGoogle,
+        signInAsGuest,
         signUp,
         signOut,
         resetPassword,
