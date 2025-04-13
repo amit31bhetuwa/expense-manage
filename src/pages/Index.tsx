@@ -1,12 +1,23 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React from 'react';
+import { AuthContainer } from '@/components/auth/AuthContainer';
+import { useAuth } from '@/hooks/use-auth';
+import { Dashboard } from '@/components/layout/Dashboard';
+import { Sidebar } from '@/components/layout/Sidebar';
 
 const Index = () => {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <AuthContainer />;
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
+    <div className="flex h-screen">
+      <Sidebar />
+      <main className="flex-1 overflow-auto pl-64">
+        <Dashboard />
+      </main>
     </div>
   );
 };
